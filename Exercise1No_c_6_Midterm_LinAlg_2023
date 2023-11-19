@@ -1,0 +1,130 @@
+# Linear Algebra Midterm, Exercise 1:
+
+# row1, row2: lists representing rows of matrix
+# col: index representing column where gauss elimination takes place
+# target: value that 'row2[col]' is adjusted to during gauss elimination
+def eliminate(row1, row2, col, target=0):
+    if row1[col] == 0:
+        return False # Indicate that row swap is needed
+
+    factor = (row2[col] - target) / row1[col] # Ratio between element below pivot and pivot element itself
+    for i in range(len(row2)): #'i' stands for row_index
+        row2[i] -= factor * row1[i]
+    return True
+
+def gauss_elimination(matrix):
+    # Check for invertibility
+    for i in range(len(matrix)):
+        if matrix[i][i] == 0: # Check if pivot element in current row = 0
+            for j in range(i + 1, len(matrix)): #'j' stands for column_index
+                if matrix[i][j] != 0 and eliminate(matrix[i], matrix[j], i): # Check if there's non-zero element in same column ('j'), but in row below current one ('i')
+                    break
+            else:
+                raise ValueError("Matrix is not invertible. ")
+            
+        for j in range(i + 1, len(matrix)):
+            eliminate(matrix[i], matrix[j], i)
+
+    for i in range(len(matrix) - 1, -1, -1): # Iterates backward through each row (starting from last row)
+        for j in range(i - 1, -1, -1): # For each row 1 in outer loop, inner loop iterates through rows above current row
+            eliminate(matrix[i], matrix[j], i)
+
+    for i in range(len(matrix)):
+        eliminate(matrix[i], matrix[i], i, target=1) # Target 1, so goal is to transform pivot element to 1
+
+    return matrix
+
+# Check if we have a square matrix (if non-square, then no inverse!):
+def inverse_matrix(matrix):
+    n = len(matrix)
+    if len(matrix) != len(matrix[0]): # Check if row number = column number
+        raise ValueError("Input matrix must be square matrix. ") # If row number not equal column number, raise error
+    
+    augmented_matrix = [[0] * n for _ in range(n)]
+
+    for i, row in enumerate(matrix):
+        augmented_matrix[i].extend([0] * i + [1] + [0] * (n - 1 - i) + row) # For constructing augmented row that is added to matrix
+
+    try:
+        gauss_elimination(augmented_matrix)
+    except ValueError as e:
+        raise ValueError(f"Error during Gaussian elimination: {e}")
+
+    # Extract inverse matrix from augmented matrix
+    return [augmented_matrix[i][n:] for i in range(n)]
+
+
+# Subquestion d) of task 1:
+def solve_linear_system(A,b):
+    
+    # Attempt to calculate inverse of matrix A using inverse_matrix' function
+    try:
+        A_inv = inverse_matrix(A)
+    except ValueError as e: # if A not invertible matrix
+        print(f" Error. Cannot solve system: {e}")
+        return
+    
+    # Multiply the inverse of A with b to get the solution x
+    x = [sum(A_inv[i][j] * b[j] for j in range(len(b))) for i in range(len(A_inv))]
+
+    print("Solution(s) for Ax = b: ")
+    # Initiate 'for' loop that iterates over indices 'i' of solution vector 'x'
+    for i in range(len(x)): # len(x) returns length of solution vector, which corresponds to number of variables in linear system
+        print(f"x{i + 1} = {x[i]}")
+
+def input_matrix(rows, cols):
+    matrix = []
+    for i in range(rows):
+        # Iterates over each row and prompts user to enter space-separated values for each row of matrix
+        row = list(map(float, input(f"Enter space-separated values for row {i + 1} of the matrix A: ").split()))
+        if len(row) != cols: # If number of input values for row doesn't match expected column number ('cols')
+            raise ValueError(f"Invalid number of values. Expected {cols} values.")
+        matrix.append(row)
+    return matrix
+
+def input_vector(size):
+    return list(map(float, input(f"Enter space-separated values for the vector b: ").split()))
+
+# Get user input for matrix A
+rows_A = int(input("Enter the number of rows for matrix A: "))
+cols_A = int(input("Enter the number of columns for matrix A: "))
+A = input_matrix(rows_A, cols_A)
+
+# Get user input for vector b
+size_b = int(input("Enter the size of vector b: "))
+b = input_vector(size_b)
+
+# Solve linear system Ax = b
+solve_linear_system(A, b)
+
+
+# Subquestion c) of task 1:
+# First sample square matrix:
+my_test_matrix_1 = [[2, 3],
+               [4, 6]]
+# Not invertible because second row is scalar multiple of first row (row2 = 2 * row1)
+# So if we use matrix in 'inverse_matrix' function, we should get error message indicating that matrix isn't invertible
+
+try:
+    result = inverse_matrix(my_test_matrix_1)
+    print("Original matrix: ")
+    for row in my_test_matrix_1: # Loop that iterates over each element in my_test_matrix_1
+        print(row)
+
+    print("\nInverse matrix: ")
+    for row in result:
+        print(row)
+
+except ValueError as e:
+    print(f"Error: {e}")
+
+# Second sample square matrix:
+matrix = [[2, 1, -1], [-3, -1, 2], [-2, 1, 2]]
+
+try:
+    inverse = inverse_matrix(matrix)
+    print("Inverse Matrix:")
+    for row in inverse:
+        print(row)
+except ValueError as e:
+    print(f"Error: {e}")
